@@ -17,5 +17,11 @@ RUN elasticsearch-plugin install --batch com.floragunn:search-guard-7:${ELK_VERS
 # sgadmin and other third-party tools require a valid Java home
 ENV JAVA_HOME /usr/share/elasticsearch/jdk
 
+# Add NLP resources here
+RUN mkdir -p /usr/share/elasticsearch/config/analysis
+COPY /analysis/de_DR.xml /usr/share/elasticsearch/config/analysis/
+COPY /analysis/dictionary-de.txt /usr/share/elasticsearch/config/analysis/
+
 # Add your elasticsearch plugins setup here
 # Example: RUN elasticsearch-plugin install analysis-icu
+RUN bin/elasticsearch-plugin install https://github.com/spinscale/elasticsearch-ingest-langdetect/releases/download/${ELK_VERSION}.1/ingest-langdetect-${ELK_VERSION}.1.zip

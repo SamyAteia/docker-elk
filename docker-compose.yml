@@ -19,36 +19,12 @@ services:
       - "9200:9200"
       - "9300:9300"
     environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ES_JAVA_OPTS: "-Xmx1g -Xms1g"
       # Use single node discovery in order to disable production mode and avoid bootstrap checks
       # see https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
     networks:
-      - elk
-
-  logstash:
-    build:
-      context: logstash/
-      args:
-        ELK_VERSION: $ELK_VERSION
-    volumes:
-      - type: bind
-        source: ./logstash/config/logstash.yml
-        target: /usr/share/logstash/config/logstash.yml
-        read_only: true
-      - type: bind
-        source: ./logstash/pipeline
-        target: /usr/share/logstash/pipeline
-        read_only: true
-    ports:
-      - "5000:5000"
-      - "9600:9600"
-    environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-    networks:
-      - elk
-    depends_on:
-      - elasticsearch
+      - elastic
 
   kibana:
     build:
@@ -64,12 +40,12 @@ services:
     ports:
       - "5601:5601"
     networks:
-      - elk
+      - elastic
     depends_on:
       - elasticsearch
 
 networks:
-  elk:
+  elastic:
     driver: bridge
 
 volumes:

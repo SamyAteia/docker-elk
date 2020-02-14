@@ -3,6 +3,7 @@ ARG ELK_VERSION
 # https://github.com/elastic/elasticsearch-docker
 FROM docker.elastic.co/elasticsearch/elasticsearch:${ELK_VERSION}
 
+COPY config/hunspell/ config/hunspell/
 COPY config/sg/ config/sg/
 COPY bin/ bin/
 
@@ -20,6 +21,7 @@ ENV JAVA_HOME /usr/share/elasticsearch/jdk
 # Add NLP resources here
 RUN mkdir -p /usr/share/elasticsearch/config/analysis
 COPY /analysis/de_DR.xml /usr/share/elasticsearch/config/analysis/
+COPY /analysis/dictionary-de.txt /usr/share/elasticsearch/config/analysis/
 COPY /analysis/dictionary-de.txt /usr/share/elasticsearch/config/analysis/
 
 # Add your elasticsearch plugins setup here

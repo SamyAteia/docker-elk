@@ -3,67 +3,22 @@
 set -eu
 set -o pipefail
 
-function log {
-	echo -e "\n[+] $1\n"
-}
 
-function poll_ready {
-	local svc=$1
-	local url=$2
+source "$(dirname ${BASH_SOURCE[0]})/lib/testing.sh"
 
-	local -a args=( '-s' '-D-' '-w' '%{http_code}' "$url" )
-	if [ "$#" -ge 3 ]; then
-		args+=( '-u' "$3" )
-	fi
-
-	local label
-	if [ "$MODE" == "swarm" ]; then
-		label="com.docker.swarm.service.name=elk_${svc}"
-	else
-		label="com.docker.compose.service=${svc}"
-	fi
-
-	local -i result=1
-	local cid
-	local output
-
-	# retry for max 180s (36*5s)
-	for _ in $(seq 1 36); do
-		cid="$(docker ps -q -f label="$label")"
-		if [ -z "${cid:-}" ]; then
-			echo "Container exited"
-			return 1
-		fi
-
-		set +e
-		output="$(curl "${args[@]}")"
-		set -e
-		if [ "${output: -3}" -eq 200 ]; then
-			result=0
-			break
-		fi
-
-		echo -n '.'
-		sleep 5
-	done
-
-	echo -e "\n${output::-3}"
-
-	return $result
-}
 
 declare MODE=""
 if [ "$#" -ge 1 ]; then
 	MODE=$1
 fi
 
-log 'Waiting for Elasticsearch readiness'
+log 'Waiting for readiness of Elasticsearch'
 poll_ready elasticsearch 'http://localhost:9200/' 'kibanaserver:kibanaserver'
 
-log 'Waiting for Kibana readiness'
+log 'Waiting for readiness of Kibana'
 poll_ready kibana 'http://localhost:5601/api/status'
 
-log 'Waiting for Logstash readiness'
+log 'Waiting for readiness of Logstash'
 poll_ready logstash 'http://localhost:9600/_node/pipelines/main?pretty'
 
 log 'Creating Logstash index pattern in Kibana'
@@ -76,7 +31,7 @@ curl -X POST -D- 'http://localhost:5601/api/saved_objects/index-pattern' \
 	-d '{"attributes":{"title":"logstash-*","timeFieldName":"@timestamp"}}'
 
 log 'Searching index pattern via Kibana API'
-response="$(curl 'http://localhost:5601/api/saved_objects/_find?type=index-pattern' -u kibanaro:kibanaro)"
+response="$(curl 'http://localhost:5601/api/saved_objects/_find?type=index-pattern' -s -u kibanaro:kibanaro)"
 echo "$response"
 count="$(jq -rn --argjson data "${response}" '$data.total')"
 if [[ $count -ne 1 ]]; then
@@ -92,7 +47,7 @@ curl -X POST 'http://localhost:9200/_refresh' -u admin:admin \
 	-s -w '\n'
 
 log 'Searching message in Elasticsearch'
-response="$(curl 'http://localhost:9200/_count?q=message:dockerelk&pretty' -u readall:readall)"
+response="$(curl 'http://localhost:9200/_count?q=message:dockerelk&pretty' -s -u readall:readall)"
 echo "$response"
 count="$(jq -rn --argjson data "${response}" '$data.count')"
 if [[ $count -ne 1 ]]; then

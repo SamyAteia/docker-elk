@@ -1,7 +1,7 @@
 # Elastic stack (ELK) on Docker
 
 [![Join the chat at https://gitter.im/deviantony/docker-elk](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/deviantony/docker-elk?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Elastic Stack version](https://img.shields.io/badge/ELK-7.5.1-blue.svg?style=flat)](https://github.com/deviantony/docker-elk/issues/462)
+[![Elastic Stack version](https://img.shields.io/badge/ELK-7.6.2-blue.svg?style=flat)](https://github.com/deviantony/docker-elk/issues/483)
 [![Build Status](https://api.travis-ci.org/deviantony/docker-elk.svg?branch=searchguard)](https://travis-ci.org/deviantony/docker-elk)
 
 Run the latest version of the [Elastic stack][elk-stack] with Docker and Docker Compose.
@@ -67,9 +67,12 @@ and description of the built-in Search Guard users.**
 
 ### Host setup
 
-* [Docker Engine](https://docs.docker.com/install/) version **17.05+**
-* [Docker Compose](https://docs.docker.com/compose/install/) version **1.12.0+**
+* [Docker Engine](https://docs.docker.com/install/) version **17.05** or newer
+* [Docker Compose](https://docs.docker.com/compose/install/) version **1.20.0** or newer
 * 1.5 GB of RAM
+
+> :information_source: Especially on Linux, make sure your user has the [required permissions][linux-postinstall] to
+> interact with the Docker daemon.
 
 By default, the stack exposes the following ports:
 * 5000: Logstash TCP input
@@ -77,9 +80,9 @@ By default, the stack exposes the following ports:
 * 9300: Elasticsearch TCP transport
 * 5601: Kibana
 
-> :information_source: Elasticsearch's [bootstrap checks][booststap-checks] were purposely disabled to facilitate the
-> setup of the Elastic stack in development environments. For production setups, we recommend users to set up their host
-> according to the instructions from the Elasticsearch documentation: [Important System Configuration][es-sys-config].
+> :warning: Elasticsearch's [bootstrap checks][booststap-checks] were purposely disabled to facilitate the setup of the
+> Elastic stack in development environments. For production setups, we recommend users to set up their host according to
+> the instructions from the Elasticsearch documentation: [Important System Configuration][es-sys-config].
 
 ### SELinux
 
@@ -115,7 +118,7 @@ $ docker-compose up
 
 You can also run all services in the background (detached mode) by adding the `-d` flag to the above command.
 
-> :information_source: You must run `docker-compose build` first whenever you switch branch or update a base image.
+> :warning: You must run `docker-compose build` first whenever you switch branch or update a base image.
 
 If you are starting the stack for the very first time, please read the section below attentively.
 
@@ -174,10 +177,14 @@ When Kibana launches for the first time, it is not configured with any index pat
 #### Via the Kibana web UI
 
 > :information_source: You need to inject data into Logstash before being able to configure a Logstash index pattern via
-the Kibana web UI. Then all you have to do is hit the *Create* button.
+the Kibana web UI.
 
-Refer to [Connect Kibana with Elasticsearch][connect-kibana] for detailed instructions about the index pattern
-configuration.
+Navigate to the _Discover_ view of Kibana from the left sidebar. You will be prompted to create an index pattern. Enter
+`logstash-*` to match Logstash indices then, on the next page, select `@timestamp` as the time filter field. Finally,
+click _Create index pattern_ and return to the _Discover_ view to inspect your log entries.
+
+Refer to [Connect Kibana with Elasticsearch][connect-kibana] and [Creating an index pattern][index-pattern] for detailed
+instructions about the index pattern configuration.
 
 #### On the command line
 
@@ -186,7 +193,7 @@ Create an index pattern via the Kibana API:
 ```console
 $ curl -XPOST -D- 'http://localhost:5601/api/saved_objects/index-pattern' \
     -H 'Content-Type: application/json' \
-    -H 'kbn-version: 7.5.1' \
+    -H 'kbn-version: 7.6.2' \
     -u kibanaserver:kibanaserver \
     -d '{"attributes":{"title":"logstash-*","timeFieldName":"@timestamp"}}'
 ```
@@ -318,7 +325,7 @@ $ docker-compose build
 $ docker-compose up
 ```
 
-> :information_source: Always pay attention to the [upgrade instructions][upgrade] for each individual component before
+> :warning: Always pay attention to the [upgrade instructions][upgrade] for each individual component before
 performing a stack upgrade.
 
 ### Plugins and integrations
@@ -352,6 +359,8 @@ instead of `elasticsearch`.
 [paid-features]: https://docs.search-guard.com/latest/search-guard-enterprise-edition
 [trial-license]: https://docs.search-guard.com/latest/search-guard-enterprise-edition#trial-license
 
+[linux-postinstall]: https://docs.docker.com/install/linux/linux-postinstall/
+
 [booststap-checks]: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
 [es-sys-config]: https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html
 
@@ -359,6 +368,7 @@ instead of `elasticsearch`.
 [mac-mounts]: https://docs.docker.com/docker-for-mac/osxfs/
 
 [connect-kibana]: https://www.elastic.co/guide/en/kibana/current/connect-to-elasticsearch.html
+[index-pattern]: https://www.elastic.co/guide/en/kibana/current/index-patterns.html
 
 [config-es]: ./elasticsearch/config/elasticsearch.yml
 [config-sg]: ./elasticsearch/config/sg/
@@ -369,8 +379,8 @@ instead of `elasticsearch`.
 [kbn-docker]: https://www.elastic.co/guide/en/kibana/current/docker.html
 [ls-docker]: https://www.elastic.co/guide/en/logstash/current/docker-config.html
 
-[log4j-props]: https://github.com/elastic/logstash/tree/7.3/docker/data/logstash/config
-[esuser]: https://github.com/elastic/elasticsearch/blob/7.3/distribution/docker/src/docker/Dockerfile#L18-L19
+[log4j-props]: https://github.com/elastic/logstash/tree/7.6/docker/data/logstash/config
+[esuser]: https://github.com/elastic/elasticsearch/blob/7.6/distribution/docker/src/docker/Dockerfile#L23-L24
 
 [upgrade]: https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-upgrade.html
 
